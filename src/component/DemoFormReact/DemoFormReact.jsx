@@ -78,15 +78,15 @@ const DemoFormReact = () => {
         .string()
         .required("Vui lòng không bỏ trống")
         .email("Vui lòng nhập đúng định dạng email"),
-      msnv: yup.string().required("Vui lòng không bỏ trống"),
-      //   .min(4, "Vui lòng nhập tối thiểu 4 ký tự")
-      //   .max(8, "Vui lòng nhập tối đa 8 ký tự"),
-      // soDienThoai: yup
-      //   .string()
-      //   .matches(
-      //     /^(03|05|07|08|09|01[2|6|8|9])+([0-9]{8})$/,
-      //     "Vui lòng nhập đúng sdt việt nam"
-      //   ),
+      msnv: yup.string().required("Vui lòng không bỏ trống")
+        .min(4, "Vui lòng nhập tối thiểu 4 ký tự")
+        .max(8, "Vui lòng nhập tối đa 8 ký tự"),
+      soDienThoai: yup
+        .string()
+        .matches(
+          /^(03|05|07|08|09|01[2|6|8|9])+([0-9]{8})$/,
+          "Vui lòng nhập đúng sdt việt nam"
+        ),
       matKhau: yup
         .string()
         .matches(
