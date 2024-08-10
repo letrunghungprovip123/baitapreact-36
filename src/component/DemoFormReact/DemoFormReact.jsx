@@ -39,12 +39,41 @@ const DemoFormReact = () => {
   const { NhanVien } = useSelector((state) => state.arrNhanVienSlice);
   const [arrNhanVien, setArrNhanVien] = useState(getLocalStorage("NhanVien"));
   const dispatch = useDispatch();
-  const [arrFillter,setArrFilter] = useState(arrNhanVien);
-  const [isDisabled,setIsDisabled] = useState(false);
-  console.log(isDisabled)
+  const [arrFillter, setArrFilter] = useState(arrNhanVien);
+  const [isDisabled, setIsDisabled] = useState(false);
+  const isEmpty = obj => Object.keys(obj).length === 0;
+  const validationSchema = yup.object({
+    email: yup
+      .string()
+      .required("Vui lòng không bỏ trống")
+      .email("Vui lòng nhập đúng định dạng email"),
+    msnv: yup
+      .string()
+      .required("Vui lòng không bỏ trống")
+      .min(4, "Vui lòng nhập tối thiểu 4 ký tự")
+      .max(8, "Vui lòng nhập tối đa 8 ký tự"),
+    soDienThoai: yup
+      .string()
+      .matches(
+        /^(03|05|07|08|09|01[2|6|8|9])+([0-9]{8})$/,
+        "Vui lòng nhập đúng sdt việt nam"
+      ),
+    matKhau: yup
+      .string()
+      .matches(
+        /^(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*(),.?":{}|<>]).{8,}$/,
+        "Vui lòng tạo mật khẩu có ít nhất 1 ký tự đặc biệt, 1 chữ cái viết hoa và 1 số"
+      ),
+    hoTen: yup
+      .string()
+      .matches(/^[A-Za-zÀ-ỹ\s]+$/, "Vui lòng nhập chữ không có số"),
+    gioiTinh: yup.string().required("Vui lòng chọn giới tính"),
+    ngaySinh: yup.string().required("Vui lòng chọn ngày sinh"),
+  });
+
   dispatch(chonArrNhanVien(arrNhanVien));
   useEffect(() => {
-    setLocalStorage("NhanVien", arrNhanVien)
+    setLocalStorage("NhanVien", arrNhanVien);
     setArrFilter(arrNhanVien);
   }, [arrNhanVien]);
 
@@ -58,6 +87,10 @@ const DemoFormReact = () => {
     touched,
     resetForm,
     setValues,
+    validateForm,
+    setTouched,
+    setErrors,
+    setStatus,
   } = useFormik({
     // initialValues là dữ liệu mặc định của formik được cung cấp từ người dùng
     initialValues: {
@@ -73,42 +106,34 @@ const DemoFormReact = () => {
     onSubmit: (values) => {
       setArrNhanVien([...arrNhanVien, values]);
     },
-    validationSchema: yup.object({
-      email: yup
-        .string()
-        .required("Vui lòng không bỏ trống")
-        .email("Vui lòng nhập đúng định dạng email"),
-      msnv: yup.string().required("Vui lòng không bỏ trống")
-        .min(4, "Vui lòng nhập tối thiểu 4 ký tự")
-        .max(8, "Vui lòng nhập tối đa 8 ký tự"),
-      soDienThoai: yup
-        .string()
-        .matches(
-          /^(03|05|07|08|09|01[2|6|8|9])+([0-9]{8})$/,
-          "Vui lòng nhập đúng sdt việt nam"
-        ),
-      matKhau: yup
-        .string()
-        .matches(
-          /^(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*(),.?":{}|<>]).{8,}$/,
-          "Vui lòng tạo mật khẩu có ít nhất 1 ký tự đặc biệt, 1 chữ cái viết hoa và 1 số"
-        ),
-      hoTen: yup
-        .string()
-        .matches(/^[A-Za-zÀ-ỹ\s]+$/, "Vui lòng nhập chữ không có số"),
-      gioiTinh: yup.string().required("Vui lòng chọn giới tính"),
-      ngaySinh: yup.string().required("Vui lòng chọn ngày sinh"),
-
-      // msnv : gồm từ 4 đến 8 ký tự, không bỏ trống
-      // số điện thoại : nhập đúng số điện thoại việt nam (regex)
-      // matKhau : bao gồm ít nhất 1 ký tự đặc biệt, ít nhất 1 chữ cái viết hoa và có ít nhất 1 số
-      // giới tính : bắt buộc chọn
-      // họ tên : phải là chữ
-    }),
+    validationSchema,
   });
-  const toogleDisable = (is) => { 
-    is ? setIsDisabled(true) : setIsDisabled(false)
-  }
+  const handleValidation = () => {
+    // Tạo đối tượng touched với tất cả các trường được đánh dấu là true
+    const touchedResult = Object.keys(values).reduce((acc, key) => {
+      acc[key] = true;
+      return acc;
+    }, {});
+    // Cập nhật trạng thái touched
+
+    setTouched(Object.assign(touched, touchedResult));
+
+    // Chờ trạng thái touched được cập nhật (bằng cách sử dụng setTimeout để cho React có cơ hội cập nhật trạng thái)
+    validateForm()
+      .then((errors) => {
+        setErrors(errors);
+      })
+      .catch((error) => {
+        console.error("Error during validation:", error);
+      });
+    if (isEmpty(errors)) {
+      return false;
+    }
+    return true;
+  };
+  const toogleDisable = (is) => {
+    is ? setIsDisabled(true) : setIsDisabled(false);
+  };
   const deleteNhanVien = (msnv) => {
     const newArrNhanVien = [...arrNhanVien];
     const index = getIndex(newArrNhanVien, msnv);
@@ -146,12 +171,15 @@ const DemoFormReact = () => {
       return originWord2.includes(originWord);
     });
     // console.log(arrFillter)
-    return arrFillter
+    return arrFillter;
   };
+  // console.log(touched)
+  // console.log(errors);
+
   return (
     <div>
       <div className="text-center mb-10">
-      <h2 className="text-4xl font-bold">Bài Tập Form Sinh Viên</h2>
+        <h2 className="text-4xl font-bold">Bài Tập Form Sinh Viên</h2>
       </div>
       <form onSubmit={handleSubmit}>
         <div className="grid grid-cols-2 gap-5">
@@ -254,10 +282,14 @@ const DemoFormReact = () => {
             type="password"
           />
           <div className="space-x-5">
-            <ButtonCustom content={"Thêm Sinh Viên"} type="submit" disabled={isDisabled ? true : false} />
+            <ButtonCustom
+              content={"Thêm Sinh Viên"}
+              type="submit"
+              disabled={isDisabled ? true : false}
+            />
             <ButtonCustom
               onClick={() => {
-                toogleDisable(false)
+                toogleDisable(false);
                 resetForm();
               }}
               content={"Reset Form"}
@@ -265,9 +297,13 @@ const DemoFormReact = () => {
             />
             <ButtonCustom
               onClick={() => {
-                toogleDisable(false)
-                updateNhanVien(values);
-                resetForm();
+                handleValidation();
+                console.log(handleValidation());
+                if (!handleValidation()) {
+                  toogleDisable(false);
+                  updateNhanVien(values);
+                  resetForm();
+                }
               }}
               content={"Cập nhật Sinh Viên"}
               bgColor="bg-yellow-500"
@@ -283,7 +319,7 @@ const DemoFormReact = () => {
             size="large"
             suffix={suffix}
             onChange={(event) => {
-              setArrFilter(searchNhanVien(event.target.value))
+              setArrFilter(searchNhanVien(event.target.value));
             }}
           />
         </div>

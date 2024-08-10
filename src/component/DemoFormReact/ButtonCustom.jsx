@@ -12,7 +12,7 @@ const ButtonCustom = ({
       {disabled ? (
         <button
           type={type}
-          className={`py-2 px-5 text-white rounded-md ${bgColor == "bg-blue-500" ? "bg-blue-300" : "bg-yellow-300"}`}
+          className={`py-2 px-5 text-white rounded-md ${bgColor == "bg-blue-500" ? "bg-blue-300" : "bg-yellow-300"} cursor-not-allowed`}
           onClick={onClick}
           disabled
         >
